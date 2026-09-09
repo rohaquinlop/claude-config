@@ -12,8 +12,11 @@ cd claude-config
 ./install.sh
 ```
 
-This symlinks each file/dir into `~/.claude/`. Anything already there is
-moved to `~/.claude-config-backup-<timestamp>/` first, nothing is deleted.
+This symlinks each file into `~/.claude/`, merging per-file into `hooks/`,
+`skills/`, and `agents/` (stow-style) so any local-only files there are left
+untouched. Anything it replaces is moved to
+`~/.claude-config-backup-<timestamp>/` first, nothing is deleted. Safe to
+re-run any time to pick up repo updates.
 
 ## What's here
 
