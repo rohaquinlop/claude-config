@@ -20,6 +20,27 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | grep -Eq 'git (reset --hard|checkout -b)' && { echo 'Blocked: ask the user before destructive/branch-creating git ops.' >&2; exit 2; } || exit 0"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "docker ps --format '{{.Names}}' | grep -q . && echo 'WARNING: containers still running:' && docker ps --format '{{.Names}}' || true"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -51,6 +72,9 @@
   "effortLevel": "medium",
   "modelSettings": {
     "claude-sonnet-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-4-6": {
       "effortLevel": "high"
     }
   },
