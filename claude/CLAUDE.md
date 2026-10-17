@@ -25,6 +25,47 @@
 - After every implementation, before telling me it's done: review the diff
   yourself, report what you found, then fix it — the same loop I'd ask for
   manually. Do this by default; don't wait for me to say "review this."
+- Only change what was asked. Do not add helpers, PR notes, doc blocks or
+  "while I'm here" fixes without asking first.
+- Do not reword existing user-facing text (help strings, labels, messages)
+  unless the task is about that text.
+- If you spot an adjacent bug, report it in one line and wait for a
+  go-ahead.
+
+## Workflow: SDD & shipping
+
+- Feature and bug work follows explore → propose → apply → review → archive
+  → commit → PR. Don't skip steps or merge them unless asked.
+- Commits: small, logical, and scoped. Never stage backup files, .env files,
+  or anything containing secrets.
+- Before merging or comparing branches, always `git fetch` first. Never
+  trust local remote-tracking refs.
+- Live runs against remote environments may need VPN and project env vars. Check
+  first. If either is missing, say so and give me the exact command to run
+  instead of retrying.
+- Facts and claims to stakeholders must be backed by a query result. Label
+  anything unverified as a hypothesis.
+
+## CI: SonarCloud duplication gate
+
+- Sonar fails PRs when duplicated lines in new code exceed the threshold.
+- When writing tests, extract shared setup and patch blocks into fixtures or
+  helpers. Never copy-paste large `patch(...)` blocks between tests.
+- Use `pytest.mark.parametrize` instead of near-identical test functions.
+- Before pushing, scan your diff for repeated blocks of 5 or more lines and
+  deduplicate them.
+
+## Data / Queries: Snowflake & ScyllaDB
+
+- Snowflake: avoid correlated EXISTS subqueries (use JOINs) and avoid named
+  WINDOW clauses (inline OVER()).
+- Before casting or parsing timestamps, check for an existing typed column
+  (e.g. a `*_ts` column) and use it.
+- Identifiers may differ in case across systems. Compare case-insensitively.
+- ScyllaDB: infer partition and clustering keys from the code before writing
+  a DELETE. timeuuid values are not quoted.
+- Prefer cheap validation queries. Avoid full scans when a keyed lookup
+  works.
 
 ## Project Conventions (read before editing)
 
@@ -138,6 +179,10 @@ cut, don't add.
   `uv` is a viable option.
 - Respect existing typing conventions (e.g. `Optional[X]`) — don't let
   ruff/pyupgrade autofixes silently rewrite them.
+- The type checker is `ty`, not pyright or mypy. Ignore pyright diagnostics.
+- Prefer explicit type annotations and low cyclomatic complexity.
+- Tests must pass on Windows CI too: use pathlib and avoid POSIX-only
+  assumptions.
 - No explanatory code comments. Never write a comment that restates what
   the code does — only comment when the WHY is non-obvious (a hidden
   constraint, a subtle invariant, a workaround for a specific bug). Use
