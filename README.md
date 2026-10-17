@@ -25,7 +25,9 @@ re-run any time to pick up repo updates.
 - `claude/statusline.sh` — git branch, context usage, rate limit status line
 - `claude/hooks/` — session hooks (`herdr-agent-state.sh` is a no-op unless
   the [herdr](https://herdr.app) terminal integration env vars are set;
-  safe to keep even without herdr installed)
+  safe to keep even without herdr installed). `py-post-edit.sh` and
+  `py-stop-gate.sh` run ruff, ty, complexipy, pytest and jscpd in Python
+  projects (`pyproject.toml`) only
 - `claude/skills/` — reusable skills (git commit conventions, PR creation,
   codebase system-mapping, handoff docs, etc.)
 - `claude/agents/` — subagent definitions (code review, codebase recon,

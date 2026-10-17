@@ -32,12 +32,31 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.claude/hooks/py-post-edit.sh\"",
+            "timeout": 120,
+            "statusMessage": "Running Python edit checks"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "docker ps --format '{{.Names}}' | grep -q . && echo 'WARNING: containers still running:' && docker ps --format '{{.Names}}' || true"
+          },
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.claude/hooks/py-stop-gate.sh\"",
+            "timeout": 900,
+            "statusMessage": "Running Python quality gate"
           }
         ]
       }
