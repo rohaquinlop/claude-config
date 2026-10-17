@@ -6,8 +6,8 @@
     "commit": "",
     "pr": ""
   },
-  "model": "sonnet",
-  "disableClaudeAiConnectors": true,
+  "model": "opus[1m]",
+  "disableClaudeAiConnectors": false,
   "hooks": {
     "SessionStart": [
       {
@@ -95,6 +95,9 @@
     },
     "claude-opus-4-6": {
       "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium"
     }
   },
   "tui": "fullscreen",
