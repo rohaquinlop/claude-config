@@ -135,6 +135,12 @@ cut, don't add.
 - Report only what changed, what was verified, what failed.
 - If I give a numbered list of fixes ("do #1, #3, #5"), act on them
   directly. Don't re-confirm the plan first.
+- When you need me to decide, choose, or approve, use the structured
+  question tool (AskUserQuestion). Never bury the ask in a paragraph.
+- One decision at a time. If a second issue comes up, raise it as its own
+  ask after the first is settled, not as a "by the way".
+- Restate the state you rely on. Never write "as we decided above" or
+  "keep in mind X": say X again.
 
 ## Writing (Slack / Jira / release notes)
 
