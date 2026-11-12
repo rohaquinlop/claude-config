@@ -1,17 +1,26 @@
 {
   "env": {
-    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1"
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80"
   },
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "permissions": {
+    "defaultMode": "auto"
+  },
   "model": "opus[1m]",
   "disableClaudeAiConnectors": false,
+  "skillOverrides": {
+    "bro": "off",
+    "poc-codebase-review": "off",
+    "system-map": "off"
+  },
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "*",
+        "matcher": "^(startup|resume|clear|compact|fork)$",
         "hooks": [
           {
             "type": "command",
@@ -67,12 +76,13 @@
     "command": "bash \"$HOME/.claude/statusline.sh\""
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": false,
+    "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": false,
     "sdd@spec-driven-framework": true,
-    "be-terse@be-terse": true
+    "be-terse@be-terse": true,
+    "shepherd@shepherd": true
   },
   "extraKnownMarketplaces": {
     "spec-driven-framework": {
@@ -86,9 +96,17 @@
         "source": "github",
         "repo": "rohaquinlop/be-terse"
       }
+    },
+    "shepherd": {
+      "source": {
+        "source": "github",
+        "repo": "rohaquinlop/shepherd"
+      }
     }
   },
   "effortLevel": "medium",
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 400000,
   "modelSettings": {
     "claude-sonnet-5": {
       "effortLevel": "high"
