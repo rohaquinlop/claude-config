@@ -56,18 +56,26 @@
   subagent's full output lands back in this context anyway, so it never
   saves tokens for small lookups; it only adds latency and cost.
 - If a task looks large enough that a subagent seems warranted, ask before
-  spawning one rather than dispatching by default.
+  spawning one rather than dispatching by default. Exception: if a skill
+  or plugin I invoked tells you to dispatch a subagent (e.g. shepherd's
+  reviewer), dispatch it without asking.
 - When a subagent is genuinely warranted, prompt it to return a **concise
   synthesized finding** (short bulleted summary), not verbatim file dumps or
   quoted code blocks. Raw dumps land directly in the parent's context
   regardless of fork vs. fresh — asking for a summary is what actually saves
   tokens.
-- For simple/mechanical subagent work (recon, straightforward lookups,
-  boilerplate generation), pass `model: "haiku"` explicitly rather than
-  inheriting the parent's model.
-- Reserve full-capability (sonnet/opus-tier) subagents for tasks that need
-  real reasoning: adversarial verification, ambiguous design tradeoffs,
-  genuinely independent review.
+- If a skill, plugin or agent definition sets the model for a subagent
+  (e.g. shepherd), follow it. The order below applies only when nothing
+  else sets the model.
+- Pick the subagent model in this order. Always pass `model` explicitly:
+    1. `haiku` (first choice): recon, lookups, searches, mechanical or
+       boilerplate work.
+    2. `sonnet` (the default): use it when the task is too complex for
+       haiku, for example research synthesis, multi-step investigation or
+       a normal review.
+    3. `opus` (last resort): use it only when sonnet is not enough, for
+       example adversarial verification, ambiguous design tradeoffs,
+       architecture, or a complex `Plan` task.
 - Don't run a second validation pass on something already verified directly
   unless there's a concrete reason to doubt it.
 - When writing or editing a subagent/skill definition file, omit its
