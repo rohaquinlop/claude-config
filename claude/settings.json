@@ -105,8 +105,6 @@
     }
   },
   "effortLevel": "medium",
-  "autoCompactEnabled": true,
-  "autoCompactWindow": 400000,
   "modelSettings": {
     "claude-sonnet-5": {
       "effortLevel": "high"
@@ -118,7 +116,10 @@
       "effortLevel": "medium"
     }
   },
+  "autoCompactWindow": 400000,
   "tui": "fullscreen",
   "editorMode": "normal",
-  "agentPushNotifEnabled": true
+  "autoCompactEnabled": true,
+  "agentPushNotifEnabled": true,
+  "theme": "dark"
 }
