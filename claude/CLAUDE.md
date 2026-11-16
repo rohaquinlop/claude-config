@@ -46,37 +46,6 @@
 - Facts and claims to stakeholders must be backed by a query result. Label
   anything unverified as a hypothesis.
 
-## CI: SonarCloud duplication gate
-
-- Sonar fails PRs when duplicated lines in new code exceed the threshold.
-- When writing tests, extract shared setup and patch blocks into fixtures or
-  helpers. Never copy-paste large `patch(...)` blocks between tests.
-- Use `pytest.mark.parametrize` instead of near-identical test functions.
-- Before pushing, scan your diff for repeated blocks of 5 or more lines and
-  deduplicate them.
-
-## Data / Queries: Snowflake & ScyllaDB
-
-- Snowflake: avoid correlated EXISTS subqueries (use JOINs) and avoid named
-  WINDOW clauses (inline OVER()).
-- Before casting or parsing timestamps, check for an existing typed column
-  (e.g. a `*_ts` column) and use it.
-- Identifiers may differ in case across systems. Compare case-insensitively.
-- ScyllaDB: infer partition and clustering keys from the code before writing
-  a DELETE. timeuuid values are not quoted.
-- Prefer cheap validation queries. Avoid full scans when a keyed lookup
-  works.
-
-## Project Conventions (read before editing)
-
-- Read env/config access patterns before adding new ones: use
-  `environment_variables.py`, not raw `os.getenv`.
-- Preserve existing `docker-compose` `VAR=${VAR}` interpolation style; do not
-  strip it.
-- If a spec says AppConfig-only (or similar), do not introduce an
-  alternative config path.
-- Before implementing, grep for an existing helper doing the same thing.
-
 ## Subagent discipline
 
 - Do NOT delegate implementation work to subagents — write code directly in
