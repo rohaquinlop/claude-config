@@ -121,5 +121,6 @@
   "editorMode": "normal",
   "autoCompactEnabled": true,
   "agentPushNotifEnabled": true,
-  "theme": "dark"
+  "theme": "dark",
+  "autoMemoryEnabled": false
 }
