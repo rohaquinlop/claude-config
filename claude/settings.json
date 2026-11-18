@@ -80,17 +80,10 @@
     "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "swift-lsp@claude-plugins-official": false,
-    "sdd@spec-driven-framework": true,
     "be-terse@be-terse": true,
     "shepherd@shepherd": true
   },
   "extraKnownMarketplaces": {
-    "spec-driven-framework": {
-      "source": {
-        "source": "github",
-        "repo": "rohaquinlop/spec-driven-framework"
-      }
-    },
     "be-terse": {
       "source": {
         "source": "github",
@@ -118,9 +111,9 @@
   },
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
+  "autoMemoryEnabled": false,
+  "theme": "dark",
   "editorMode": "normal",
   "autoCompactEnabled": true,
-  "agentPushNotifEnabled": true,
-  "theme": "dark",
-  "autoMemoryEnabled": false
+  "agentPushNotifEnabled": true
 }

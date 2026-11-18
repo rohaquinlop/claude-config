@@ -6,7 +6,8 @@
   for a merge, do only the merge.
 - Commit on the branch I am currently on. Do not create a new branch unless
   I say so.
-- Never include `.sdd/` or session scratchpad artifacts in commits or PRs.
+- Never include `.claude/shepherd/` state or session scratchpad artifacts in
+  commits or PRs.
 - Group changes into conventional commits (feat/fix/refactor/docs, scoped).
 - Never include `Co-Authored-By` or "Generated with Claude" trailers.
 - Before committing, run `git status` and stage only the files you touched —
@@ -32,10 +33,15 @@
 - If you spot an adjacent bug, report it in one line and wait for a
   go-ahead.
 
-## Workflow: SDD & shipping
+## Workflow: shepherd & shipping
 
-- Feature and bug work follows explore → propose → apply → review → archive
-  → commit → PR. Don't skip steps or merge them unless asked.
+- Use shepherd for all feature and bug work: `/shepherd:run <issue | Jira
+  key | pasted story>` drives it from study to a merge-ready PR. Follow its
+  playbook; don't skip its review gate or run the steps by hand.
+- If a bug's root cause is unknown, start with `/shepherd:diagnose`. Fix it
+  in a new session with `/shepherd:run docs/diagnoses/<file>.md`.
+- Invoking `/shepherd:run` counts as asking for that change's branch,
+  commits, pushes, and PR replies. It never merges; neither do you.
 - Commits: small, logical, and scoped. Never stage backup files, .env files,
   or anything containing secrets.
 - Before merging or comparing branches, always `git fetch` first. Never
