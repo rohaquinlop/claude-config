@@ -1,6 +1,6 @@
 # claude-config
 
-Personal Claude Code configuration: global instructions, skills, agents, hooks,
+Personal Claude Code configuration: global instructions, skills, hooks,
 and status line. Sanitized for public sharing — no org names, private repo
 paths, credentials, or machine-specific data.
 
@@ -37,8 +37,6 @@ The Python hooks need these tools on `PATH`. Without them, the stop gate blocks 
   projects (`pyproject.toml`) only
 - `claude/skills/` — reusable skills (git commit conventions, PR creation,
   codebase system-mapping, handoff docs, etc.)
-- `claude/agents/` — subagent definitions (code review, codebase recon,
-  web research)
 
 ## What's intentionally excluded
 
