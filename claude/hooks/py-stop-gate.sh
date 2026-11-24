@@ -37,28 +37,26 @@ limited() {
 		alarm $t; waitpid($p, 0);
 		exit($? & 127 ? 128 + ($? & 127) : $? >> 8)' "$gate_timeout" "$@"
 }
-check() {
-	name=$1
-	shift
-	out=$("$@" 2>&1) || report="$report
-== $name failed ==
-$out"
-}
 pytest_gate() {
 	limited uv run --no-sync pytest -q -x
 	rc=$?
 	[ "$rc" -eq 5 ] && return 0
 	return "$rc"
 }
-check pytest pytest_gate
-printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'complexipy --failed --plain "$@"' _ >"$state/complexipy.log" 2>&1 ||
-	report="$report
-== complexipy failed ==
-$(cat "$state/complexipy.log")"
-printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'npx -y jscpd@4 --min-lines 5 --threshold 3 --reporters console "$@"' _ >"$state/jscpd.log" 2>&1 ||
-	report="$report
-== jscpd failed ==
-$(grep -v '^    at ' "$state/jscpd.log")"
+collect() {
+	wait "$2" || report="$report
+== $1 failed ==
+$(grep -v '^    at ' "$state/$1.log")"
+}
+pytest_gate >"$state/pytest.log" 2>&1 &
+pytest_pid=$!
+printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'complexipy --failed --plain "$@"' _ >"$state/complexipy.log" 2>&1 &
+complexipy_pid=$!
+printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'npx -y jscpd@4 --min-lines 5 --threshold 3 --reporters console "$@"' _ >"$state/jscpd.log" 2>&1 &
+jscpd_pid=$!
+collect pytest "$pytest_pid"
+collect complexipy "$complexipy_pid"
+collect jscpd "$jscpd_pid"
 
 attempts=$state/attempts
 [ "$(printf '%s' "$input" | jq -r '.stop_hook_active')" = true ] || echo 0 >"$attempts"
