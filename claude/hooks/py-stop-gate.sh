@@ -15,7 +15,7 @@ state=${TMPDIR:-/tmp}/claude-py-gate/$(printf '%s' "$PWD" | shasum | cut -c1-12)
 mkdir -p "$state"
 tree=$({
 	git diff HEAD
-	printf '%s\n' "$files" | xargs cat
+	printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 cat
 } | shasum | cut -c1-40)
 [ "$(cat "$state/passed" 2>/dev/null)" = "$tree" ] && exit 0
 [ "$(cat "$state/reported" 2>/dev/null)" = "$tree" ] && exit 0
