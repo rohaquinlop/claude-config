@@ -18,6 +18,13 @@ untouched. Anything it replaces is moved to
 `~/.claude-config-backup-<timestamp>/` first, nothing is deleted. Safe to
 re-run any time to pick up repo updates.
 
+## Requirements
+
+The Python hooks need these tools on `PATH`. Without them, the stop gate blocks with `command not found`.
+
+- [complexipy](https://github.com/rohaquinlop/complexipy), used by `py-post-edit.sh` and `py-stop-gate.sh`: `uv tool install complexipy`
+- [jscpd](https://github.com/kucherenko/jscpd) v4, used by `py-stop-gate.sh`: `bun add -g jscpd@4` (v5 adds color codes to its output)
+
 ## What's here
 
 - `claude/CLAUDE.md` — global instructions (all projects)
