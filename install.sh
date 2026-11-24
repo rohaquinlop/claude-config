@@ -31,6 +31,7 @@ link_file() {
 # directories on the target so local-only files/dirs are left in place.
 link_tree() {
   local src_dir="$1" dst_dir="$2"
+  [ -d "$src_dir" ] || return 0
   mkdir -p "$dst_dir"
 
   local entry name
