@@ -52,7 +52,7 @@ pytest_gate >"$state/pytest.log" 2>&1 &
 pytest_pid=$!
 printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'complexipy --failed --plain "$@"' _ >"$state/complexipy.log" 2>&1 &
 complexipy_pid=$!
-printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'npx -y jscpd@4 --min-lines 5 --threshold 3 --reporters console "$@"' _ >"$state/jscpd.log" 2>&1 &
+printf '%s\n' "$files" | tr '\n' '\0' | limited xargs -0 sh -c 'jscpd --min-lines 5 --threshold 3 --reporters console "$@"' _ >"$state/jscpd.log" 2>&1 &
 jscpd_pid=$!
 collect pytest "$pytest_pid"
 collect complexipy "$complexipy_pid"
