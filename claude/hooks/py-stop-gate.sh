@@ -1,7 +1,8 @@
 #!/bin/sh
 # Stop gate for Python repos with uncommitted .py changes. A failure blocks the
 # stop up to 3 times per prompt. After that the user is told, and the same tree
-# is not blocked again until it changes.
+# is not blocked again until it changes. Each check stops after 240s. A timeout
+# does not block: the user is told once, and the same tree is not checked again.
 input=$(cat)
 cd "$CLAUDE_PROJECT_DIR" 2>/dev/null && [ -f pyproject.toml ] || exit 0
 git rev-parse --verify -q HEAD >/dev/null || exit 0
