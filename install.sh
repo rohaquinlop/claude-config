@@ -17,6 +17,18 @@ link_file() {
       return
     fi
     rm "$dst"
+  elif [ -f "$dst" ] && [ -f "$src" ]; then
+    # Tools that save by replacing the file (Claude Code and settings.json) turn the
+    # symlink into a real file, so a differing real file is newer than the repo copy.
+    if ! cmp -s "$dst" "$src"; then
+      if [ -n "$(git -C "$repo_dir" status --porcelain -- "$src")" ]; then
+        echo "skipped: $dst differs and $src has uncommitted changes" >&2
+        return
+      fi
+      cp "$dst" "$src"
+      echo "adopted: $dst into the repo; review with git diff"
+    fi
+    rm "$dst"
   elif [ -e "$dst" ]; then
     mkdir -p "$backup_dir/$(dirname "${dst#"$target_dir"/}")"
     mv "$dst" "$backup_dir/${dst#"$target_dir"/}"
