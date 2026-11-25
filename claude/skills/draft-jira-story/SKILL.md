@@ -1,5 +1,5 @@
 ---
-name: jira
+name: draft-jira-story
 description: Draft a Jira story or incident writeup
 ---
 Write a Jira story/writeup about: $ARGUMENTS
