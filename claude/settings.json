@@ -1,7 +1,8 @@
 {
   "env": {
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
-    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80"
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
   },
   "attribution": {
     "commit": "",
@@ -15,7 +16,9 @@
   "skillOverrides": {
     "bro": "off",
     "poc-codebase-review": "off",
-    "system-map": "off"
+    "system-map": "off",
+    "complete-partial-pr": "off",
+    "poweruser-feature-audit": "off"
   },
   "hooks": {
     "SessionStart": [
@@ -84,11 +87,17 @@
     "frontend-design@claude-plugins-official": false,
     "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "swift-lsp@claude-plugins-official": false,
+    "sdd@spec-driven-framework": true,
     "be-terse@be-terse": true,
     "shepherd@shepherd": true
   },
   "extraKnownMarketplaces": {
+    "spec-driven-framework": {
+      "source": {
+        "source": "github",
+        "repo": "rohaquinlop/spec-driven-framework"
+      }
+    },
     "be-terse": {
       "source": {
         "source": "github",
@@ -116,9 +125,9 @@
   },
   "autoCompactWindow": 400000,
   "tui": "fullscreen",
-  "autoMemoryEnabled": false,
-  "theme": "dark",
   "editorMode": "normal",
   "autoCompactEnabled": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "theme": "dark",
+  "autoMemoryEnabled": false
 }
