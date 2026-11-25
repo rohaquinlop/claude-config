@@ -127,7 +127,8 @@ cut, don't add.
 
 ## Writing (Slack / Jira / release notes)
 
-- Default to terse: 3-6 lines for Slack, no preamble, no hedging.
+- Default to terse: no preamble, no hedging. For Slack, use the
+  `draft-slack-message` skill; it sets length and shape.
 - Do NOT hard-wrap text destined for Slack, Jira, or GitHub release bodies —
   those render literal line breaks.
 - State only verified facts; never invent rationale or context. If a claim
