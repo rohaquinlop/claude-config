@@ -5,7 +5,8 @@
 - NEVER commit, push, or create branches unless explicitly asked. If I ask
   for a merge, do only the merge.
 - Commit on the branch I am currently on. Do not create a new branch unless
-  I say so.
+  I say so. Exception: on a default branch (`main` or the repo's base
+  branch), stop and ask before committing.
 - Never include `.claude/shepherd/` state or session scratchpad artifacts in
   commits or PRs.
 - Group changes into conventional commits (feat/fix/refactor/docs, scoped).
@@ -28,6 +29,13 @@
   manually. Do this by default; don't wait for me to say "review this."
 - Only change what was asked. Do not add helpers, PR notes, doc blocks or
   "while I'm here" fixes without asking first.
+- Never remove or change code, config or infra entries the task does not
+  name (e.g. a `docker-compose` service, an env entry).
+- Do not change how a shared helper behaves to fit one call. Pass the
+  arguments at the call site (`get_env_var("KEY", "default")`, not
+  `get_env_var("KEY") or "default"`).
+- Before removing an "unused" attribute or env var, check that no
+  dependency (internal SDK, library) reads it.
 - Do not reword existing user-facing text (help strings, labels, messages)
   unless the task is about that text.
 - If you spot an adjacent bug, report it in one line and wait for a
@@ -133,6 +141,8 @@ cut, don't add.
   those render literal line breaks.
 - State only verified facts; never invent rationale or context. If a claim
   is unverified, say so or ask.
+- Never assume people's roles, team ownership, or how systems you did not
+  read work. Ask, or say "based on what we checked".
 - Save generated docs into the repo (e.g. `docs/`), never to a session
   scratchpad.
 
@@ -171,9 +181,29 @@ cut, don't add.
   ruff/pyupgrade autofixes silently rewrite them.
 - The type checker is `ty`, not pyright or mypy. Ignore pyright diagnostics.
 - Prefer explicit type annotations and low cyclomatic complexity.
-- Tests must pass on Windows CI too: use pathlib and avoid POSIX-only
-  assumptions.
+- Use pathlib for paths.
 - No explanatory code comments. Never write a comment that restates what
   the code does — only comment when the WHY is non-obvious (a hidden
   constraint, a subtle invariant, a workaround for a specific bug). Use
-  docstrings for that, not inline comments.
+  docstrings for that, not inline comments. State only facts you verified.
+
+## Python code structure
+
+Apply these unless the repo's own rules say otherwise.
+
+- All imports go at the top of the file. Never import inside a function.
+  Never make an import conditional (`if TYPE_CHECKING:`,
+  `try/except ImportError`, platform checks) to pass a linter or break a
+  cycle. Import the module directly.
+- Write for the platform the code runs on. Add cross-platform guards only
+  when CI runs that platform.
+- One concern per module. Do not group unrelated functions in one file.
+- Keep every `__init__.py` empty. No re-exports.
+- Fixed value sets are Enums in a constants module, not loose ints or
+  strings.
+- A helper that only one class uses is a private method of that class, not
+  a module-level function.
+- A client for an external service (AWS, HTTP API) is a class: `__init__`
+  builds the client, methods do the calls.
+- To read a new payload field, add it to the model. Never use `getattr` or
+  dict lookups on a payload. A field the producer always sends is required.
