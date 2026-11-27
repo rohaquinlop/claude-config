@@ -1,2 +1,5 @@
 .DS_Store
 *.local.json
+.venv/
+__pycache__/
+.pytest_cache/
