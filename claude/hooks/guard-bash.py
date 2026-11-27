@@ -73,8 +73,8 @@ class GitCall:
 
 FETCH_MAX_AGE_SECONDS = 600
 SHELLS = {"sh", "bash", "zsh"}
-PREFIX_WORDS = {"command", "builtin", "exec", "nohup", "time", "env", "sudo", "nice",
-                "{", "}", "!", "if", "then", "do", "else", "elif", "while", "until"}
+WRAPPERS = {"command", "builtin", "exec", "nohup", "time", "env", "sudo", "nice"}
+KEYWORDS = {"{", "}", "!", "if", "then", "do", "else", "elif", "while", "until"}
 WRAPPER_VALUE_OPTIONS = {"sudo": {"-u", "-g", "-U", "-C", "-D", "-h", "-p"},
                          "env": {"-u", "-C"}, "nice": {"-n"}}
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
@@ -108,7 +108,7 @@ class Tokenizer:
         self.text = text.replace("\\\n", "")
         self.pos = 0
         self.commands: list[tuple[tuple[int, ...], list[str]]] = []
-        self.nested: list[str] = []
+        self.nested: list[tuple[int, str]] = []
         self.words: list[str] = []
         self.word: list[str] | None = None
         self.role = ""
@@ -116,7 +116,7 @@ class Tokenizer:
         self.groups: list[int] = []
         self.group_count = 0
 
-    def run(self) -> tuple[list[tuple[tuple[int, ...], list[str]]], list[str]]:
+    def run(self) -> tuple[list[tuple[tuple[int, ...], list[str]]], list[tuple[int, str]]]:
         while self.pos < len(self.text):
             self._step(self.text[self.pos])
         self._end_command()
@@ -166,7 +166,7 @@ class Tokenizer:
         if ch == "`":
             end = self.text.find("`", self.pos + 1)
             end = len(self.text) if end == -1 else end
-            self.nested.append(self.text[self.pos + 1:end])
+            self.nested.append((len(self.commands), self.text[self.pos + 1:end]))
             self.pos = end + 1
             return True
         if ch == "$" and self._peek() == "(":
@@ -198,7 +198,7 @@ class Tokenizer:
             else:
                 depth += {"(": 1, ")": -1}.get(ch, 0)
             i += 1
-        self.nested.append(self.text[start:i - 1 if depth == 0 else i])
+        self.nested.append((len(self.commands), self.text[start:i - 1 if depth == 0 else i]))
         return i
 
     def _redirect(self) -> None:
@@ -297,20 +297,24 @@ class Guard:
         commands, nested = Tokenizer(script).run()
         findings: list[Finding] = []
         cwds: dict[tuple[int, ...], Path] = {(): cwd}
+        heres: list[Path] = []
+        scripts: list[tuple[str, Path]] = []
         chained = False
         for group, words in commands:
             argv = self._strip_prefix(words)
             here = self._group_cwd(cwds, group)
+            heres.append(here)
             if not argv:
                 continue
             if argv[0] == "cd":
                 cwds[group] = self._change_dir(here, argv[1:])
                 continue
-            nested.extend(self._shell_script(argv))
+            scripts.extend((sub, here) for sub in self._shell_script(argv))
             findings.extend(self._check(argv, here, chained))
             chained = True
-        for sub_script in nested:
-            findings.extend(self.evaluate(sub_script, cwd))
+        scripts.extend((sub, heres[k] if k < len(heres) else cwds[()]) for k, sub in nested)
+        for sub, sub_cwd in scripts:
+            findings.extend(self.evaluate(sub, sub_cwd))
         return findings
 
     def _group_cwd(self, cwds: dict[tuple[int, ...], Path], group: tuple[int, ...]) -> Path:
@@ -320,11 +324,16 @@ class Guard:
 
     def _strip_prefix(self, argv: list[str]) -> list[str]:
         i = 0
-        while i < len(argv) and (argv[i] in PREFIX_WORDS or ASSIGNMENT.match(argv[i])):
+        while i < len(argv):
             word = argv[i]
-            i += 1
-            if word in PREFIX_WORDS:
-                i = self._skip_options(argv, i, WRAPPER_VALUE_OPTIONS.get(word, set()))
+            if word == "command" and argv[i + 1:i + 2] in (["-v"], ["-V"]):
+                return []
+            if word in WRAPPERS:
+                i = self._skip_options(argv, i + 1, WRAPPER_VALUE_OPTIONS.get(word, set()))
+            elif word in KEYWORDS or ASSIGNMENT.match(word):
+                i += 1
+            else:
+                break
         return argv[i:]
 
     def _skip_options(self, argv: list[str], i: int, value_options: set[str]) -> int:
