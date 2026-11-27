@@ -74,7 +74,7 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": false,
     "pyright-lsp@claude-plugins-official": false,
-    "rust-analyzer-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": false,
     "be-terse@be-terse": true,
     "shepherd@shepherd": true
   },
