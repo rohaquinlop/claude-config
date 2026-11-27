@@ -57,6 +57,11 @@ class HookInput:
     command: str
     cwd: Path
 
+    @classmethod
+    def from_json(cls, raw: str) -> "HookInput":
+        data = json.loads(raw)
+        return cls(command=data["tool_input"]["command"], cwd=Path(data["cwd"]))
+
 
 @dataclass(frozen=True)
 class GitCall:
@@ -70,6 +75,8 @@ FETCH_MAX_AGE_SECONDS = 600
 SHELLS = {"sh", "bash", "zsh"}
 PREFIX_WORDS = {"command", "builtin", "exec", "nohup", "time", "env", "sudo", "nice",
                 "{", "}", "!", "if", "then", "do", "else", "elif", "while", "until"}
+WRAPPER_VALUE_OPTIONS = {"sudo": {"-u", "-g", "-U", "-C", "-D", "-h", "-p"},
+                         "env": {"-u", "-C"}, "nice": {"-n"}}
 ASSIGNMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 PYTHON = re.compile(r"(python|pip)(3(\.\d+)?)?")
 ORIGIN_REF = re.compile(r"(^|[^\w-])origin/")
@@ -100,14 +107,16 @@ class Tokenizer:
     def __init__(self, text: str) -> None:
         self.text = text.replace("\\\n", "")
         self.pos = 0
-        self.commands: list[list[str]] = []
+        self.commands: list[tuple[tuple[int, ...], list[str]]] = []
         self.nested: list[str] = []
         self.words: list[str] = []
         self.word: list[str] | None = None
         self.role = ""
         self.heredocs: list[tuple[str, bool]] = []
+        self.groups: list[int] = []
+        self.group_count = 0
 
-    def run(self) -> tuple[list[list[str]], list[str]]:
+    def run(self) -> tuple[list[tuple[tuple[int, ...], list[str]]], list[str]]:
         while self.pos < len(self.text):
             self._step(self.text[self.pos])
         self._end_command()
@@ -131,6 +140,7 @@ class Tokenizer:
             self._redirect()
         elif ch in ";&|()":
             self._end_command()
+            self._group(ch)
             self.pos += 1
         else:
             self._word_char(ch)
@@ -217,8 +227,15 @@ class Tokenizer:
         self._end_word()
         self.role = ""
         if self.words:
-            self.commands.append(self.words)
+            self.commands.append((tuple(self.groups), self.words))
         self.words = []
+
+    def _group(self, ch: str) -> None:
+        if ch == "(":
+            self.group_count += 1
+            self.groups.append(self.group_count)
+        elif ch == ")" and self.groups:
+            self.groups.pop()
 
     def _skip_heredoc_bodies(self) -> None:
         for delimiter, strip_tabs in self.heredocs:
@@ -279,30 +296,44 @@ class Guard:
     def evaluate(self, script: str, cwd: Path) -> list[Finding]:
         commands, nested = Tokenizer(script).run()
         findings: list[Finding] = []
+        cwds: dict[tuple[int, ...], Path] = {(): cwd}
         chained = False
-        for argv in map(self._strip_prefix, commands):
+        for group, words in commands:
+            argv = self._strip_prefix(words)
+            here = self._group_cwd(cwds, group)
             if not argv:
                 continue
             if argv[0] == "cd":
-                cwd = self._change_dir(cwd, argv[1:])
+                cwds[group] = self._change_dir(here, argv[1:])
                 continue
             nested.extend(self._shell_script(argv))
-            findings.extend(self._check(argv, cwd, chained))
+            findings.extend(self._check(argv, here, chained))
             chained = True
         for sub_script in nested:
             findings.extend(self.evaluate(sub_script, cwd))
         return findings
 
+    def _group_cwd(self, cwds: dict[tuple[int, ...], Path], group: tuple[int, ...]) -> Path:
+        if group not in cwds:
+            cwds[group] = self._group_cwd(cwds, group[:-1])
+        return cwds[group]
+
     def _strip_prefix(self, argv: list[str]) -> list[str]:
         i = 0
         while i < len(argv) and (argv[i] in PREFIX_WORDS or ASSIGNMENT.match(argv[i])):
+            word = argv[i]
             i += 1
-            while argv[i - 1] in PREFIX_WORDS and i < len(argv) and argv[i].startswith("-"):
-                i += 1
+            if word in PREFIX_WORDS:
+                i = self._skip_options(argv, i, WRAPPER_VALUE_OPTIONS.get(word, set()))
         return argv[i:]
 
+    def _skip_options(self, argv: list[str], i: int, value_options: set[str]) -> int:
+        while i < len(argv) and argv[i].startswith("-"):
+            i += 2 if argv[i] in value_options else 1
+        return i
+
     def _change_dir(self, cwd: Path, args: list[str]) -> Path:
-        target = args[0] if args and args[0] != "-" else "~"
+        target = next((a for a in args if not a.startswith("-")), "~")
         return (cwd / Path(target).expanduser()).resolve()
 
     def _shell_script(self, argv: list[str]) -> list[str]:
@@ -322,7 +353,7 @@ class Guard:
             findings.append(Finding(Decision.DENY, R_PYTHON))
         if name == "gh":
             findings.extend(self._check_gh(argv[1:], chained))
-        git = parse_git(argv, cwd)
+        git = self._parse_git(argv, cwd)
         if git:
             findings.extend(self._check_git(git, chained))
         return findings
@@ -353,20 +384,19 @@ class Guard:
     def default_branches(self, repo: Repo) -> set[str]:
         return {"main", *self.config.default_branches, *filter(None, [repo.base_branch])}
 
-
-def parse_git(argv: list[str], cwd: Path) -> GitCall | None:
-    if Path(argv[0]).name != "git":
-        return None
-    i, configs = 1, []
-    while i < len(argv) and argv[i].startswith("-"):
-        if argv[i] in GIT_VALUE_OPTIONS and i + 1 < len(argv):
-            if argv[i] == "-C":
-                cwd = (cwd / Path(argv[i + 1]).expanduser()).resolve()
-            elif argv[i] == "-c":
-                configs.append(argv[i + 1])
+    def _parse_git(self, argv: list[str], cwd: Path) -> GitCall | None:
+        if Path(argv[0]).name != "git":
+            return None
+        i, configs = 1, []
+        while i < len(argv) and argv[i].startswith("-"):
+            if argv[i] in GIT_VALUE_OPTIONS and i + 1 < len(argv):
+                if argv[i] == "-C":
+                    cwd = (cwd / Path(argv[i + 1]).expanduser()).resolve()
+                elif argv[i] == "-c":
+                    configs.append(argv[i + 1])
+                i += 1
             i += 1
-        i += 1
-    return GitCall(argv[i], argv[i + 1:], cwd, configs) if i < len(argv) else None
+        return GitCall(argv[i], argv[i + 1:], cwd, configs) if i < len(argv) else None
 
 
 def has_flag(args: list[str], short: str, *long: str) -> bool:
@@ -407,7 +437,7 @@ def commit_rule(guard: Guard, git: GitCall, repo: Repo) -> Finding | None:
 
 
 def add_rule(guard: Guard, git: GitCall, repo: Repo) -> Finding | None:
-    sweeping = {".", ":/", "*"} & set(git.args) or has_flag(git.args, "A", "--all")
+    sweeping = {".", "./", ":/", "*"} & set(git.args) or has_flag(git.args, "A", "--all")
     return Finding(Decision.DENY, R_ADD_ALL) if git.sub == "add" and sweeping else None
 
 
@@ -452,22 +482,26 @@ def load_config() -> Config:
     return Config(frozenset(data.get("default_branches", [])), rules)
 
 
-def read_input(raw: str) -> HookInput:
-    data = json.loads(raw)
-    return HookInput(command=data["tool_input"]["command"], cwd=Path(data["cwd"]))
+def decide(raw: str) -> tuple[Decision, str]:
+    hook = HookInput.from_json(raw)
+    findings = Guard(load_config()).evaluate(hook.command, hook.cwd)
+    decision = max((f.decision for f in findings), default=Decision.ALLOW)
+    reasons = dict.fromkeys(f.reason for f in findings if f.decision is decision)
+    return decision, " ".join(reasons)
 
 
 def main() -> None:
-    hook = read_input(sys.stdin.read())
-    findings = Guard(load_config()).evaluate(hook.command, hook.cwd)
-    decision = max((f.decision for f in findings), default=Decision.ALLOW)
+    """Fails closed: an error in the guard or its config denies the call, so a bug never lets it through."""
+    try:
+        decision, reason = decide(sys.stdin.read())
+    except (OSError, ValueError, LookupError, RuntimeError, TypeError, re.error) as error:
+        decision, reason = Decision.DENY, f"the guard failed ({error!r}); fix it or its config file."
     if decision is Decision.ALLOW:
         return
-    reasons = dict.fromkeys(f.reason for f in findings if f.decision is decision)
     output = {"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": decision.name.lower(),
-        "permissionDecisionReason": "guard-bash: " + " ".join(reasons),
+        "permissionDecisionReason": f"guard-bash: {reason}",
     }}
     print(json.dumps(output))
 
