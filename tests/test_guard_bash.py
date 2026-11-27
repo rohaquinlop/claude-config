@@ -46,10 +46,10 @@ def make_repo(root: Path, case: Case) -> Path:
     return repo
 
 
-def run_guard(command: str, cwd: Path, config: Path) -> str:
+def run_guard(command: str, cwd: Path, config: Path, runner: list[str] | None = None) -> str:
     payload = {"hook_event_name": "PreToolUse", "tool_name": "Bash",
                "tool_input": {"command": command}, "cwd": str(cwd)}
-    result = subprocess.run([sys.executable, str(SCRIPT)], input=json.dumps(payload),
+    result = subprocess.run([*(runner or [sys.executable]), str(SCRIPT)], input=json.dumps(payload),
                             capture_output=True, text=True, check=True,
                             env={**os.environ, "CLAUDE_GUARD_BASH_CONFIG": str(config)})
     if not result.stdout.strip():
@@ -64,3 +64,9 @@ def test_guard_bash(case: Case, tmp_path: Path) -> None:
     if case.config is not None:
         config.write_text(json.dumps(case.config))
     assert run_guard(case.command, repo, config) == case.expect
+
+
+def test_guard_bash_runs_as_installed(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path, Case(id="uv", command="", expect="", branch="main"))
+    runner = ["uv", "run", "--quiet", "--script"]
+    assert run_guard("git commit -m x", repo, tmp_path / "none.json", runner) == "ask"

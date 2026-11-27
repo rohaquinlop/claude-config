@@ -32,10 +32,14 @@
   {"id": "commit-message-with-flag-text", "command": "git commit -m \"drop -a and -n flags\"", "expect": "allow"},
   {"id": "commit-base-branch", "command": "git commit -m x", "branch": "develop", "base": "develop", "expect": "ask"},
   {"id": "commit-config-default-branch", "command": "git commit -m x", "branch": "trunk", "config": {"default_branches": ["trunk"]}, "expect": "ask"},
+  {"id": "cd-in-subshell-does-not-leak", "command": "(cd /tmp && true); git commit -m x", "branch": "main", "expect": "ask"},
+  {"id": "cd-with-option", "command": "cd -P . && git commit -m x", "branch": "main", "expect": "ask"},
+  {"id": "bad-config-fails-closed", "command": "git status", "config": {"rules": [{"match": "(", "decision": "ask", "reason": "x"}]}, "expect": "deny"},
   {"id": "commit-in-subshell-cd", "command": "(cd . && git commit -m x)", "branch": "main", "expect": "ask"},
 
   {"id": "add-dot", "command": "git add .", "expect": "deny"},
   {"id": "add-all-long", "command": "git add --all", "expect": "deny"},
+  {"id": "add-dot-slash", "command": "git add ./", "expect": "deny"},
   {"id": "add-files", "command": "git add src/a.py tests/test_a.py", "expect": "allow"},
 
   {"id": "branch-list", "command": "git branch -vv", "expect": "allow"},
@@ -56,6 +60,8 @@
   {"id": "python3-script", "command": "python3 script.py", "expect": "deny"},
   {"id": "python-versioned", "command": "python3.12 -m venv .venv", "expect": "deny"},
   {"id": "python-with-env-prefix", "command": "FOO=1 python -c 'print(1)'", "expect": "deny"},
+  {"id": "python-sudo-user", "command": "sudo -u root pip install x", "expect": "deny"},
+  {"id": "python-nice-n", "command": "nice -n 5 python x.py", "expect": "deny"},
   {"id": "python-abs-path", "command": "/usr/bin/python3 x.py", "expect": "deny"},
   {"id": "python-inside-docker-exec", "command": "docker exec app python manage.py check", "expect": "allow"},
   {"id": "python-inside-ssh", "command": "ssh host pip list", "expect": "allow"},
@@ -65,7 +71,7 @@
   {"id": "fetch-stale-log", "command": "git log --oneline origin/main..HEAD", "fetched_minutes_ago": 30, "expect": "deny"},
   {"id": "fetch-missing-diff", "command": "git diff origin/main -- a.py", "expect": "deny"},
   {"id": "fetch-fresh-rebase", "command": "git rebase origin/main", "fetched_minutes_ago": 1, "expect": "allow"},
-  {"id": "fetch-then-merge-same-call", "command": "git fetch && git merge origin/main", "fetched_minutes_ago": 2, "expect": "allow"},
+  {"id": "fetch-fresh-merge", "command": "git merge origin/main", "fetched_minutes_ago": 2, "expect": "allow"},
   {"id": "log-local-ref", "command": "git log --oneline main..HEAD", "expect": "allow"},
 
   {"id": "heredoc-body-ignored", "command": "cat > notes.md <<'EOF'\ngit reset --hard\ngh pr merge 1\nEOF\ngit status", "expect": "allow"},
