@@ -31,11 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.command' | grep -Eq 'git (reset --hard|checkout -b)' && { echo 'Blocked: ask the user before destructive/branch-creating git ops.' >&2; exit 2; } || exit 0"
-          },
-          {
-            "type": "command",
-            "command": "bash \"$HOME/.claude/hooks/git-push-alone.sh\"",
+            "command": "uv run --quiet --script \"$HOME/.claude/hooks/guard-bash.py\"",
             "timeout": 10
           }
         ]
@@ -78,7 +74,7 @@
   "enabledPlugins": {
     "frontend-design@claude-plugins-official": false,
     "pyright-lsp@claude-plugins-official": false,
-    "rust-analyzer-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": false,
     "be-terse@be-terse": true,
     "shepherd@shepherd": true
   },

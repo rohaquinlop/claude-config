@@ -34,7 +34,10 @@ The Python hooks need these tools on `PATH`. Without them, the stop gate blocks 
   the [herdr](https://herdr.app) terminal integration env vars are set;
   safe to keep even without herdr installed). `py-post-edit.sh` and
   `py-stop-gate.sh` run ruff, ty, complexipy, pytest and jscpd in Python
-  projects (`pyproject.toml`) only
+  projects (`pyproject.toml`) only. `guard-bash.py` (needs
+  [uv](https://docs.astral.sh/uv/)) checks every Bash call and denies or
+  asks on risky git, `gh pr merge`, and `python`/`pip` commands; extend it
+  with `~/.claude/guard-bash.json`. Tests: `uv run pytest`
 - `claude/skills/` — reusable skills (git commit conventions, PR creation,
   codebase system-mapping, handoff docs, etc.)
 
